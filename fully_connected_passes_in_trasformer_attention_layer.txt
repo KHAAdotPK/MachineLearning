@@ -1,0 +1,262 @@
+/*
+	fully_connected_passes_in_transformer_attention_layer.txt
+	Understanding Forward and Backward Passes in Transformer Attention Layer
+ 	
+	Written by, Sohail Qayum Malik.
+ */
+
+Lets relate the detail of forward and backward passes to the Transformer attention layer.
+
+1. Find forward pass equation (what's analogous to Y = X.W^T + b) in attention layer:
+
+// --------------------------------------------------
+// SECTION 1: Theoretical Equations for Forward Pass
+// --------------------------------------------------
+
+- We comute Quey(Q), Key(K), Value(V):
+  - Q = X . W^Q 
+  - K = X . W^K
+  - V = X . W^V
+
+Then
+- Attention scores: S = Q.K^T/sqrt(d_k)
+- Attention weights A = softmax(S)
+- Output before projection O = A . V
+- Final output Y = O . W^O // This final output Y is in the simplified equation: output = input × weights, possibly with a bias(many frameworks include them; some simplified implementations skip them).
+
+This (Y = O . W^O) resembles the common neural network transformation: Y = XW^T + b (bias often omitted in attention layers), highlighting that attention can also be viewed as a series of linear layers followed by weighted combination through softmax.
+
+// --------------------------------------------------------
+// SECTION 2: C++ Implementation of Attention Forward Pass
+// --------------------------------------------------------
+
+Below is the implementation of the forward pass for a single-head attention mechanism in C++, where each input token is independently transformed into query, key, and value vectors. These are then used to compute scaled dot-product attention, followed by an output projection.
+
+```C++
+
+        Collective<t> forward(Collective<t>& ei_query, Collective<t>& ei_key, Collective<t>& ei_value, Collective<t>& mask)
+        {                          
+            /*
+                Linear transformations, compute queries, keys, and values
+             */
+             
+            /*
+                It makes sense to use singular names (query, key, value) because:
+                - Each line is processed independently (not as a batch).
+                - Each token gets transformed into a query, key, and value vector separately before attention is applied.
+
+                The "scores" matrix will always be square if, ei_query and ei_key has the same shape... 
+                Which is true in the case of this implementation and...
+                that is why we can do away with just a query mask and we do not need a separate query mask 
+             */
+            Collective<t> query, key, value, scores;
+            /*
+                It makes sense to keep scores and attention_weights in plural form because:
+                - Each query attends to multiple keys → The result is a matrix of scores.
+                - Softmax produces multiple attention weights (one for each query-key pair).
+             */
+            Collective<t> attention_weights;
+
+            Collective<t> output;
+
+            X_ei_query = ei_query; // Cache the input for later use in backward pass
+            X_ei_key = ei_key;     // Cache the input for later use in backward pass
+            X_ei_value = ei_value; // Cache the input for later use in backward pass
+
+            // this->cached_value = ei_value; // Cache the value for later use in backward pass
+            
+            try
+            {
+
+                /*
+                    Use one and only one of the following scaling strategies:
+
+                    1. Option 1: Scale Q and K during projections:
+                        - Q = X * W^Q / sqrt(d_k)
+                        - K = X * W^K / sqrt(d_k)
+                        - V = X * W^V (no scaling needed in either case)
+                        scores = query · key^T;
+                    
+                    2. Option 2: Scale scores after computing them:
+                        - Q = X * W^Q
+                        - K = X * W^K
+                        - V = X * W^V (no scaling needed in either case)
+                        scores = query · key^T / sqrt(d_k);    
+                 */
+
+                /*
+                    (where X is the input to the MHA(Multi-Head Attention) layer, the one used for the value projection)
+                 */
+
+                /**********************************************************************************************************************************************************/
+                /*Note: Only query and key are scaled by the square root of the head dimension (d_k) in the forward pass                                                  */
+                /*      because the attention scores are computed as the dot product of query and key.                                                                    */
+                /*      This scaling prevents the dot-product values from growing too large in magnitude, which would push softmax into regions with very small gradients.*/
+                /**********************************************************************************************************************************************************/ 
+                // Q: XW^Q, X is the input to the MHA layer(a.k.a ei_query)                
+                query = Numcy::matmul<t>(ei_query, queryWeights) * scaleFactor;
+                // K: XW^K, X is the input to the MHA layer(a.k.a ei_key) 
+                key = Numcy::matmul<t>(ei_key, keyWeights) * scaleFactor;
+                // V: XW^V, X is the input to the MHA layer(a.k.a ei_value)                
+                value = Numcy::matmul<t>(ei_value, valueWeights); // No scaling for V
+
+                /* I have checked with ADHOC_DEBUG_MACRO for the first run of above three functions their outputs keep the padding rows */
+                
+                /*
+                    Masking has to be consistently applied in both forward and backward passes to avoid leaking gradient through padded tokens.                  
+                    Zero out padded rows in the projected value matrix (after matmul(ei_value, valueWeights) but before attention)
+
+                    Note:-
+                    Scores corresponding to masked tokens should be set to -inf (or a very negative number) before softmax so they get zero weight.
+                 */
+                for (cc_tokenizer::string_character_traits<char>::size_type k = 0; k < value.getShape().getDimensionsOfArray().getNumberOfInnerArrays(); k++)
+                {
+                    if (mask[k] == 0)
+                    {
+                        for (cc_tokenizer::string_character_traits<char>::size_type l = 0; l < value.getShape().getNumberOfColumns(); l++)
+                        {
+                            query[k*value.getShape().getNumberOfColumns() + l] = /*std::numeric_limits<t>::lowest()*/ 0;
+                            key[k*value.getShape().getNumberOfColumns() + l] = /*std::numeric_limits<t>::lowest()*/ 0;
+                            value[k*value.getShape().getNumberOfColumns() + l] = /*std::numeric_limits<t>::lowest()*/ 0;
+                        }
+                    }
+                }
+
+                // Cache the transformed Q, K, V for backward pass
+                /*
+                    Make sure that it is the same value which is used in final attention projection output
+                    O = A · V
+                 */
+                this->masked_cached_value = value;
+
+                this->masked_cached_query = query;
+                this->masked_cached_key = key;
+
+               
+                // *************************************** //
+                //  Proceed with attention calculation...  //
+                // *************************************** //
+
+                /* Compute scaled dot-product attention scores */
+                scores = Numcy::matmul<t>(query, Numcy::transpose(key)); 
+                static_assert(std::is_same<cc_tokenizer::allocator<double>, cc_tokenizer::allocator<double>>::value, "Double allocator specialization missing");
+
+                /* ********************************************** */
+                /* IT IS HERE JUST FOR THE DOCUMENTATION PURPOSES */
+                /* ********************************************** */
+                /**
+                 * WORKAROUND IMPLEMENTATION FOR SCALAR DIVISION
+                 * 
+                 * Original Issue:
+                 * - The template operator/(F x) that uses cc_tokenizer::allocator fails despite:
+                 *   1. Confirmed allocator<double> specialization exists (static_assert passes)
+                 *   2. scaleFactor is verified to be of type double (typeid shows 'd')
+                 * - The root cause appears to be template instantiation/visibility issue in complex inheritance chain
+                 *
+                 * Current Solution:
+                 * 1. Creates a temporary Collective<t> with shape [1,1] initialized to zeros
+                 *    - Uses Numcy::zeros instead of allocator to avoid template issues
+                 *    - Explicitly sets the single element to scaleFactor value
+                 * 2. Uses existing Collective<t>/Collective<t> operator
+                 *
+                 * Advantages:
+                 * - Avoids problematic allocator path entirely
+                 * - Uses already tested/working matrix division
+                 * - Maintains numerical consistency with other operations
+                 *
+                 * Trade-offs:
+                 * - Slightly less efficient than direct scalar division:
+                 *   - Allocates temporary matrix (though small)
+                 *   - Uses full matrix division machinery
+                 * - Requires scaleFactor to be convertible to type t
+                 *
+                 * Future Improvements:
+                 * 1. Could implement optimized scalar division operator later:
+                 *    template<typename t>
+                 *    Collective<t> operator/(t scalar) { element-wise division }
+                 * 2. Should investigate why allocator path fails despite proper specialization
+                 *
+                 * Debugging Notes:
+                 * - Verified working for float/double cases
+                 * - Maintains proper dimensionality in output
+                 * - Preserves exception safety guarantees
+                 */
+                /* // Collective<t> divisor = Numcy::zeros<t>(DIMENSIONS{1, 1, NULL, NULL});    
+                   // divisor[0] = scaleFactor;
+                   // scores = scores / divisor;*/
+                /* // scores = scores / static_cast<double>(scaleFactor);
+                   // std::cout << "Type of scaleFactor: " << typeid(decltype(scaleFactor)).name() << std::endl;*/
+
+                ADHOC_IMPLEMENTATION_OF_MASK_QUERY(scores, mask, false);
+                ADHOC_IMPLEMENTATION_OF_MASK_KEY(scores, mask, false);
+
+                /* ADHOC_DEBUG_MACRO(scores); */
+                
+                /*
+                    Do You Need src_mask?
+                    If input sequences are of equal length and don't have padding, then src_mask might not be meeded. However, it's best to support it for flexibility later.
+
+                    In a Transformer encoder, src_mask (source mask) is typically used in the self-attention mechanism to:
+                    1. Prevent attending to padding tokens (mask out padded positions in the input).
+                    2. Control which tokens can attend to which (if needed, like in some structured data cases).
+
+                    What You Need to Do?
+                    If you're using matmul(Q, K^T), apply the mask before softmax:
+                    attention_scores = attention_scores + src_mask;  // Apply mask  
+
+                    Make sure src_mask has negative infinity (-inf) where padding exists, so softmax turns those values into 0.
+
+                    Check Attention Class:
+                    If attention implementation already accepts a mask parameter, pass src_mask from the encoder when calling forward()
+                 */
+                
+                 /*
+                    - A Attention weights, which are the normalized scores indicating how much focus each word should receive.
+                        These weights are sometimes called just "attention weights"  and other times are called "cached attention weights"
+                  */    
+                // Apply softmax to get (attention weights a.k.a "A")  
+                attention_weights = softmax<t>(scores);
+                
+                /*
+                    - A cached
+                      Attention weights, which are the normalized scores indicating how much focus each word should receive.
+                      These weights are sometimes called just "attention weights"  and other times are called "cached attention weights"
+                 */
+                this->cached_attention_weights = attention_weights;
+                
+                /*
+                    Multiply by value
+                    O = A · V
+                 */
+                output = Numcy::matmul<t>(attention_weights, value);                                
+                /*
+                    - O  
+                      Output from attention before output projection
+                 */
+                this->cached_output_before_projection = output;
+                
+                /*
+                     Final Projected Output: Attention Projection Output = O*Wo = OWo Matrix
+                     Y = O · Wo
+
+                    - O
+                      Output from attention before output projection (a.k.a "output")
+                    - Wo 
+                      Output projection weights (a.k.a "outputWeights")
+                    
+                    Let Y = O*Wo = OWo Matrix (a.k.a "Output matrix")
+                    In Step-1 of the backward pass, we have dL/dY = incoming_gradient when Y = OWo
+                 */
+                output = Numcy::matmul<t>(output, outputWeights);                
+            }
+            catch(ala_exception& e)
+            {
+                throw ala_exception(cc_tokenizer::String<char>("Attention::forward() -> ") + cc_tokenizer::String<char>(e.what()));
+            }
+            
+            return output;
+        }
+
+```
+
+2. TODO...

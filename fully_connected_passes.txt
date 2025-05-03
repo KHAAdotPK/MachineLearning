@@ -1,3 +1,9 @@
+/*
+	fully_connected_passes.txt
+	
+	Written by, Sohail Qayum Malik.
+ */
+
   Forward Pass in Detail (Fully Connected Layers)
 ===================================================
            --------------------------------------------------------------------
