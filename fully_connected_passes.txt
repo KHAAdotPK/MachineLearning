@@ -1,0 +1,85 @@
+  Forward Pass in Detail (Fully Connected Layers)
+===================================================
+           --------------------------------------------------------------------
+           | In the forward pass, we compute outputs using the current weights. |
+            --------------------------------------------------------------------
+
+- batch_size = 4
+- input_dim = 16
+- hidden_dim = 32
+- output_dim = 8
+
+In ML, the typical forward pass is:
+
+Y = X . W^T + b
+
+X is of shape [batch_size, input_dim]
+W is of shape [output_dim, input_dim]
+W^T is of shape [input_dim, output_dim]
+X.W^T is of shape [batch_size, output_dim]
+
+Step 1: Input to Hidden
+--------------------------
+
+X = input[4][16]              // 4 samples, 16 features each
+W1 = weights[32][16]          // 32 hidden neurons, 16 weights each
+ 
+To do matrix multiplication:
+
+We need W1^T (transpose): [16][32]
+So
+
+hidden = X . W1^T → [4][16] × [16][32] = [4][32]
+
+This gives you the hidden layer activations — one vector of 32 values for each of 4 samples.
+
+Step 2: Hidden to Output
+---------------------------
+
+X = hidden[4][32]             // result of previous layer
+W2 = weights[8][32]           // 8 output neurons, 32 weights each
+
+Again, you take transpose:
+
+W2^T = [32][8]
+
+So
+
+output = X . W2^T → [4][32] × [32][8] = [4][8]
+
+You get 4 output vectors, each of size 8
+
+Summary in C-style Terms
+
+Name		Shape		Meaning
+input		[4][16]		4 samples, 16 input features
+W1		[32][16]	Hidden weights, 32 neurons
+hidden		[4][32]		Output from hidden layer
+W2		[8][32]		Output layer weights
+output		[4][8]		Final output predictions
+
+Biases (b1[32], b2[8]) are added to each corresponding unit after the matmul, typically via broadcasting.
+
+This is exactly how JEPA or any dense layer in PyTorch, TensorFlow, etc., works.
+
+
+  Backward Pass in Detail (Fully Connected Layers)
+====================================================
+            ------------------------------------------------------------------------------------------------------------------------------------
+           | In the backward pass, we differentiate the loss with respect to parameters (gradients), and use those gradients to update weights. |
+            ------------------------------------------------------------------------------------------------------------------------------------ 
+
+Assuming you have the gradient of the loss w.r.t the output dL/dY = dY, the backward gradients are (the backward pass gives)
+
+Gradient w.r.t. Weights W:
+
+dW = X^T . dY  =>  dL/dW = X^T · dL/dY,
+
+Gradient w.r.t. Input X:
+
+dX = dY . W^T => dL/dX = dL/dY · W^T
+
+Gradient w.r.t. Bias b (often omitted but useful):
+						   i=1
+db = ∑ dY (sum over the batch dimension) => dL/db = ∑  dL/dYi
+						    N
