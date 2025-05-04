@@ -1,8 +1,13 @@
 /*
 	fully_connected_passes_in_transformer_attention_layer.txt
-	Understanding Forward and Backward Passes in Transformer Attention Layer
- 	
 	Written by, Sohail Qayum Malik.
+	
+	This article provides a detailed exploration of the forward and backward passes within a Transformer's self-attention mechanism.
+	It elucidates the mathematical foundations of each pass, drawing parallels to fundamental neural network operations.
+	Furthermore, it offers a practical C++ implementation of the forward pass and a comprehensive,
+	step-by-step breakdown of the backward pass, highlighting crucial aspects like scaling,
+	masking, and the caching of intermediate values for efficient gradient computation.
+	This resource aims to demystify the inner workings of the attention layer, a core component of the Transformer architecture. 	
  */
 
 Lets relate the detail of forward and backward passes to the Transformer attention layer.
@@ -259,4 +264,229 @@ Below is the implementation of the forward pass for a single-head attention mech
 
 ```
 
-2. TODO...
+2. Backward pass in simple terms:
+
+We begin with a loss L that depends on some output Y, which itself was computed during the forward pass as: Y = X . W^T + b.
+
+// ---------------------------------------------------
+// SECTION 1: Theoretical Equations for Backward Pass
+// ---------------------------------------------------
+
+In the backward pass, we want to know ...
+
+- How much the loss changes if we change W? => This is dL/dW = X^T · dL/dY
+- How much the loss changes if we change X? => This is dL/dX = dL/dY . W 
+
+These appear multiple times in the attention code:
+
+- When computing gradients for W^Q, W^K, W^V, and W^O
+- When computing dL/dX as sum of partial derivatives from Q, K, and V paths
+
+Think of the backward pass like peeling back the layers of the forward pass, asking:
+
+"What had to change earlier in order to cause this change in the final loss?"
+
+You reverse the operations (matmuls, softmax, projections) and compute how much each one influenced the final loss, step by step. Each step just applies the chain rule.
+
+// ---------------------------------------------------------
+// SECTION 2: C++ Implementation of Attention Backward Pass
+// ---------------------------------------------------------
+
+```C++
+
+        /**
+         * @brief Backward pass for the Multi-Head Attention mechanism.
+         * 
+         * This function implements the complete backpropagation logic for the attention layer.
+         * Given the incoming gradient from the next layer (dL/dY), it computes gradients with respect to:
+         * - Output projection weights (W^O)
+         * - Attention weights (A)
+         * - Value vectors (V), Key vectors (K), and Query vectors (Q)
+         * - Their respective projection weights (W^V, W^K, W^Q)
+         * - The original input X (used for Q, K, V projections)
+         * 
+         * Steps followed:
+         * 1. Compute dL/dW^O using the cached output before projection.
+         * 2. Backpropagate to get dL/dO (gradient w.r.t. attention output).
+         * 3. From dL/dO, compute:
+         *    - dL/dA (attention weights)
+         *    - dL/dV (value vectors)
+         * 4. Apply softmax derivative to get dL/dS (attention scores).
+         * 5. Use dL/dS to compute:
+         *    - dL/dK (key vectors)
+         *    - dL/dQ (query vectors)
+         * 6. Use gradients from Q, K, and V to compute:
+         *    - dL/dW^Q
+         *    - dL/dW^K
+         *    - dL/dW^V
+         * 7. Update weights (Q, K, V) using gradients and learning rate.
+         * 8. Compute gradients with respect to the original input X, by propagating gradients backward
+         *    through the linear projection layers.
+         * 
+         * @param incoming_gradient The gradient from the next layer (∂L/∂Y).
+         * @param learning_rate The learning rate used for weight updates.
+         * @return Gradient with respect to the input of the attention layer (∂L/∂X).
+         * 
+         * @throws ala_exception if any step of the computation fails.
+         */
+        Collective<t> backward(Collective<t>& incoming_gradient, t learning_rate = ATTENTION_LAYER_DEFAULT_LEARNING_RATE) throw (ala_exception)
+        {
+            Collective<t> input_gradient; // Gradient with respect to the input tensors (queries, keys, values) and the weights.
+
+            /*
+                The backward pass of the attention mechanism involves computing gradients with respect to the input tensors (queries, keys, values) and the weights.
+                This is typically done using backpropagation through the attention mechanism.
+             */
+
+            try 
+            {   
+                /*  
+                    1. Gradient of Loss w.r.t. Output Projection Weights (Wo), dL/dWo = O^T * dL/dY
+                    Where O = cached_output_before_projection, Wo = outputWeights, dL/dY = incoming_gradient when Y = OWo
+                 */
+                Collective<t> gradient_output_weights = Numcy::matmul<t>(Numcy::transpose(cached_output_before_projection), incoming_gradient);
+
+                /*
+                    2. Gradient of Loss w.r.t. Attention Output (O), dL/dO = dL/dY * Wo^T
+                    where Wo is the "output projection weights", dL/dY is the "final Projected Output" (a.k.a incoming_gradient) 
+                    therefore, dL/dO is the gradient of the loss with respect to the attention output (a.k.a gradient_attention_output)
+                 */
+                Collective<t> gradient_attention_output = Numcy::matmul<t>(incoming_gradient, Numcy::transpose(this->outputWeights));
+
+                /*
+                    3. Gradient of Loss w.r.t. Attention Weights (A), dL/dA = dL/dO * V^T
+                    where V is the "value weights", we must use exactly the same V that was used in computing the attention output(forward pass) O = A * V
+                    and then dL/dO is the "gradient_attention_output" of step 2 
+                    therefore, dL/dA is the "gradient of the loss with respect to the attention weights" (a.k.a gradient_attention_weights)
+                 */
+                Collective<t> gradient_attention_weights = Numcy::matmul<t>(gradient_attention_output, Numcy::transpose(this->masked_cached_value));
+
+                /*                    
+                    4. Gradient Loss w.r.t. Value Vector (V = X.W^V), dL/dV = A^T * dL/dO
+                    where A is the attention weights(a.k.a cached_attention_weights or just attention_weights), dL/dO is the gradient_attention_output
+                 */
+                Collective<t> gradient_value = Numcy::matmul<t>(Numcy::transpose(this->cached_attention_weights), gradient_attention_output);
+
+                /*
+                    5. Gradient of Loss w.r.t. Attention Scores, dL/dS = dL/dA * softmax'(A) (a.k.a softmax_backward(A))
+                    where A is the attention weights(a.k.a cached_attention_weights), dL/dA is the "gradient_attention_weights" 
+                    herefore, dL/dS is the "gradient of the loss with respect to the attention scores" (a.k.a gradient_attention_scores)
+                 */
+                Collective<t> gradient_attention_scores = softmax_backward(gradient_attention_weights, this->cached_attention_weights);
+
+                /*
+                    6. Gradient of Loss w.r.t. Key Vector (K = X.W^K), dL/dK = 1/sqrt(d_k) * ((dL/dS)^T * Q)
+                    where Q is the query weights(a.k.a cached_query), dL/dS is the gradient_attention_scores and 1/sqrt(d_k) is the scaling factor(a.k.a scaleFactor)
+                    herefore, dL/dK is the gradient of the loss with respect to the key vectors (a.k.a gradient_key)
+                    6.1 => dL/dK = (dL/dS)^T * Q 
+                    6.2 => dL/dK = dL/dK * scaleFactor
+                 */                
+                Collective<t> gradient_key = Numcy::matmul<t>(Numcy::transpose(gradient_attention_scores), this->masked_cached_query);
+                gradient_key = gradient_key * scaleFactor;
+                
+                /*
+                    7. Gradient of Loss w.r.t. Query Vector (Q = X.W^Q), dL/dQ = 1/sqrt(d_k) * ((dL/dS)^T * K)
+                    where K is the key weights(a.k.a cached_key), dL/dS is the gradient_attention_scores and 1/sqrt(d_k) is the scaling factor(a.k.a scaleFactor)
+                    herefore, dL/dQ is the gradient of the loss with respect to the query vectors (a.k.a gradient_query)
+                    7.1 => dL/dQ = (dL/dS)^T * K 
+                    7.2 => dL/dQ = dL/dQ * scaleFactor
+                 */
+                Collective<t> gradient_query = Numcy::matmul<t>(Numcy::transpose(gradient_attention_scores), this->masked_cached_key);
+                gradient_query = gradient_query * scaleFactor; 
+                
+                /*
+                    --------------------------------------------------------------------------------------------------------------------------------- 
+                   | Finally.                                                                                                                        |  
+                   | These three following steps are the correct final gradient calculations for the weights of the multi-head attention (MHA) layer |     
+                    ---------------------------------------------------------------------------------------------------------------------------------
+                 */
+                /*
+                    8. Gradient of Loss w.r.t. Query Weights (W^Q), dL/dW^Q = X^T * dL/dQ
+                    where X is the input to the MHA layer, W^Q is projection matrix for Q(a.k.a queryWeights),
+                    dL/dQ is the gradient_query(calculated in step 7)
+                 */ 
+                Collective<t> gradient_query_weights = Numcy::matmul<t>(Numcy::transpose(this->X_ei_query), gradient_query);
+                /*
+                    9. Gradient of Loss w.r.t. Key Weights (W^K), dL/dW^K = X^T * dL/dK
+                    where X is the input to the MHA layer, W^K is projection matrix for K(a.k.a keyWeights),
+                    dL/dK is the gradient_key(calculated in step 6)
+                 */
+                Collective<t> gradient_key_weights = Numcy::matmul<t>(Numcy::transpose(this->X_ei_key), gradient_key);
+                /*  
+                    10. Gradient of Loss w.r.t. Value Weights (W^V), dL/dW^V = X^T * dL/dV
+                    where X is the input to the MHA layer, W^V is projection matrix for V(a.k.a valueWeights),
+                    dL/dV is the gradient_value(calculated in step 4)
+                 */
+                Collective<t> gradient_value_weights = Numcy::matmul<t>(Numcy::transpose(this->X_ei_value), gradient_value);
+
+                /*`                                                       
+                    Learning Rate Scaling:
+                    - During weight updates, we multiply the computed gradients by the learning rate.
+                    - This controls the size of the update step taken towards minimizing the loss.
+                    - A smaller learning rate means smaller updates (more stable but slower learning).
+                    - A larger learning rate means bigger updates (faster but can cause instability if too large).
+                    - Mathematically:  new_weight = old_weight - learning_rate * gradient
+                 */
+                gradient_query_weights = gradient_query_weights * learning_rate;
+                this->queryWeights = this->queryWeights - gradient_query_weights;
+
+                gradient_key_weights = gradient_key_weights * learning_rate;
+                this->keyWeights = this->keyWeights - gradient_key_weights;
+
+                gradient_value_weights = gradient_value_weights * learning_rate;
+                this->valueWeights = this->valueWeights - gradient_value_weights;
+                                
+                /* 
+                    Backpropogation: gradients flowing backwards from Q, K, V to their respectve Xs or inputs 
+                    Chain Rule Logic in terms of Q and then same for K and V as well ...
+                    - When Q = X.W^Q 
+                      - W^Q is the projection matrix for Q, and it is constant  
+                      - and X is the input to the MHA layer.                    
+                    then dL/dX (changes in X affect the final loss) = dL/dQ * dQ/dX
+                    there fore, dL/dX = dL/dQ * (W^Q)^T
+                 */
+                /*
+                    Backpropagation: gradients flowing backward from Q, K, and V to their respective input X tensors.
+                    Chain Rule Logic in terms of Q (similar for K and V as well):
+                    
+                    - When Q = X.W^Q:
+                      - W^Q is the projection matrix for Q (learnable weights), considered constant during backpropagation at this point.
+                      - X is the original input to the MHA layer.
+
+                    Then, by chain rule:
+                      dL/dX_from_Q (changes in X affect the final loss from Q side) = dL/dQ * (dQ/dX) 
+                                                                                    = dL/dQ * (W^Q)^T
+
+                    Similarly:
+                      dL/dX_from_K (changes in X affect the final loss from K side) = dL/dK * (W^K)^T
+                      dL/dX_from_V (changes in X affect the final loss from V side) = dL/dV * (W^V)^T
+
+                    Since X was used three times to create Q, K, and V separately,
+                    the total gradient with respect to X is the **sum** of these three contributions.
+                    
+                    That is:
+                    
+                    dL/dX = dL/dX (from Q path) + dL/dX (from K path) + dL/dX (from V path)
+
+                    Finally, total dL/dX = dL/dX_from_Q + dL/dX_from_K + dL/dX_from_V
+                    because the input X branches into three projections (Q, K, V) during the forward pass.
+                 */
+                /* Gradient of Loss w.r.t the input (X) that produced, Q(= X.W^Q) => dL/dX_query = dL/dQ * (W^Q)^T */
+                Collective<t> input_gradient_from_query = Numcy::matmul(gradient_query, Numcy::transpose(this->queryWeights));
+                /* Gradient of Loss w.r.t the input (X) that produced, K(= X.W^K) => dL/dX_key = dL/dK * (W^K)^T */
+                Collective<t> input_gradient_from_key = Numcy::matmul(gradient_key, Numcy::transpose(this->keyWeights));
+                /* Gradient of Loss w.r.t the input (X) that produced, V(= X.W^V) => dL/dX_value = dL/dV * (W^V)^T */
+                Collective<t> input_gradient_from_value = Numcy::matmul(gradient_value, Numcy::transpose(this->valueWeights));
+                
+                // Summing all the gradients flowing into X
+                /*incoming_gradient*/ input_gradient = input_gradient_from_query = input_gradient_from_query * learning_rate;
+            } 
+            catch (ala_exception& e) 
+            {
+                throw ala_exception(cc_tokenizer::String<char>("Attention::backward() -> ") + e.what());
+            }
+                        
+            return /*incoming_gradient*/ input_gradient; // Placeholder return value
+        }
+
+```
