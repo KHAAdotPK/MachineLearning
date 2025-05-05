@@ -20,9 +20,9 @@ In ML, the typical forward pass is:
 Y = X . W^T + b
 
 X is of shape [batch_size, input_dim]
-W is of shape [output_dim, input_dim]
-W^T is of shape [input_dim, output_dim]
-X.W^T is of shape [batch_size, output_dim]
+W is of shape [hidden_dim, input_dim]
+W^T is of shape [input_dim, hdden_dim]
+X.W^T is of shape [batch_size, hidden_dim]
 
 Step 1: Input to Hidden
 --------------------------
