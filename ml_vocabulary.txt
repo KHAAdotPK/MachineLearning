@@ -1,0 +1,8 @@
+/*
+	ml_vocabulary.txt
+	Written by, Sohail Qayum Malik.
+ */
+
+Forward Pass.
+
+In neural networks, the forward pass is the first step during both training and inference. It's the process of calculating the output of a network given some input, using the current values of weights and biases. Let’s walk through a detailed forward pass for a simple network with one hidden layer, focusing on the dimensions and transformations at each step.

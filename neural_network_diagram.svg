@@ -1,0 +1,101 @@
+<svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1000" height="600" fill="#f8f9fa" rx="10" ry="10"/>
+  
+  <!-- Title -->
+  <text x="500" y="40" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle">Neural Network Forward Pass</text>
+  
+  <!-- Layer labels -->
+  <text x="120" y="90" font-family="Arial" font-size="18" text-anchor="middle">Input Layer</text>
+  <text x="120" y="110" font-family="Arial" font-size="14" text-anchor="middle">[4][16]</text>
+  
+  <text x="500" y="90" font-family="Arial" font-size="18" text-anchor="middle">Hidden Layer</text>
+  <text x="500" y="110" font-family="Arial" font-size="14" text-anchor="middle">[4][32]</text>
+  
+  <text x="880" y="90" font-family="Arial" font-size="18" text-anchor="middle">Output Layer</text>
+  <text x="880" y="110" font-family="Arial" font-size="14" text-anchor="middle">[4][8]</text>
+  
+  <!-- Input Layer Nodes -->
+  <g id="input-layer">
+    <!-- We'll show a condensed representation of 16 nodes -->
+    <rect x="70" y="150" width="100" height="300" rx="5" ry="5" fill="#e6f7ff" stroke="#1890ff" stroke-width="2"/>
+    <text x="120" y="250" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">X</text>
+    <text x="120" y="270" font-family="Arial" font-size="12" text-anchor="middle">[4][16]</text>
+    
+    <!-- Visual representation of dimensions -->
+    <line x1="85" y1="160" x2="85" y2="440" stroke="#1890ff" stroke-width="1"/>
+    <text x="85" y="455" font-family="Arial" font-size="10" text-anchor="middle">4</text>
+    
+    <line x1="80" y1="165" x2="160" y2="165" stroke="#1890ff" stroke-width="1"/>
+    <text x="170" y="168" font-family="Arial" font-size="10" text-anchor="middle">16</text>
+  </g>
+  
+  <!-- Hidden Layer Nodes -->
+  <g id="hidden-layer">
+    <rect x="450" y="150" width="100" height="300" rx="5" ry="5" fill="#f0f5ff" stroke="#2f54eb" stroke-width="2"/>
+    <text x="500" y="250" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">Hidden</text>
+    <text x="500" y="270" font-family="Arial" font-size="12" text-anchor="middle">[4][32]</text>
+    
+    <!-- Visual representation of dimensions -->
+    <line x1="465" y1="160" x2="465" y2="440" stroke="#2f54eb" stroke-width="1"/>
+    <text x="465" y="455" font-family="Arial" font-size="10" text-anchor="middle">4</text>
+    
+    <line x1="460" y1="165" x2="540" y2="165" stroke="#2f54eb" stroke-width="1"/>
+    <text x="550" y="168" font-family="Arial" font-size="10" text-anchor="middle">32</text>
+  </g>
+  
+  <!-- Output Layer Nodes -->
+  <g id="output-layer">
+    <rect x="830" y="150" width="100" height="300" rx="5" ry="5" fill="#f9f0ff" stroke="#722ed1" stroke-width="2"/>
+    <text x="880" y="250" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">Output</text>
+    <text x="880" y="270" font-family="Arial" font-size="12" text-anchor="middle">[4][8]</text>
+    
+    <!-- Visual representation of dimensions -->
+    <line x1="845" y1="160" x2="845" y2="440" stroke="#722ed1" stroke-width="1"/>
+    <text x="845" y="455" font-family="Arial" font-size="10" text-anchor="middle">4</text>
+    
+    <line x1="840" y1="165" x2="920" y2="165" stroke="#722ed1" stroke-width="1"/>
+    <text x="930" y="168" font-family="Arial" font-size="10" text-anchor="middle">8</text>
+  </g>
+  
+  <!-- Connections from Input to Hidden -->
+  <path d="M 170 300 C 250 300, 370 300, 450 300" stroke="#1890ff" stroke-width="3" fill="none"/>
+  
+  <!-- Weight Matrix W1 -->
+  <rect x="260" y="250" width="100" height="100" rx="5" ry="5" fill="#fff1f0" stroke="#ff4d4f" stroke-width="2"/>
+  <text x="310" y="290" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">W1^T</text>
+  <text x="310" y="310" font-family="Arial" font-size="12" text-anchor="middle">[16][32]</text>
+  
+  <!-- Connections from Hidden to Output -->
+  <path d="M 550 300 C 630 300, 750 300, 830 300" stroke="#2f54eb" stroke-width="3" fill="none"/>
+  
+  <!-- Weight Matrix W2 -->
+  <rect x="640" y="250" width="100" height="100" rx="5" ry="5" fill="#fff1f0" stroke="#ff4d4f" stroke-width="2"/>
+  <text x="690" y="290" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">W2^T</text>
+  <text x="690" y="310" font-family="Arial" font-size="12" text-anchor="middle">[32][8]</text>
+    
+  <!-- Matrix multiplication labels -->
+  <text x="310" y="380" font-family="Arial" font-size="14" text-anchor="middle" fill="#ff4d4f">X · W1^T</text>
+  <text x="310" y="400" font-family="Arial" font-size="12" text-anchor="middle" fill="#ff4d4f">[4][16] × [16][32] = [4][32]</text>
+  
+  <text x="690" y="380" font-family="Arial" font-size="14" text-anchor="middle" fill="#ff4d4f">Hidden · W2^T</text>
+  <text x="690" y="400" font-family="Arial" font-size="12" text-anchor="middle" fill="#ff4d4f">[4][32] × [32][8] = [4][8]</text>
+  
+  <!-- Bias vectors -->
+  <rect x="310" y="420" width="60" height="30" rx="5" ry="5" fill="#fff1f0" stroke="#ff4d4f" stroke-width="1"/>
+  <text x="340" y="440" font-family="Arial" font-size="12" text-anchor="middle">b1[32]</text>
+  
+  <rect x="690" y="420" width="60" height="30" rx="5" ry="5" fill="#fff1f0" stroke="#ff4d4f" stroke-width="1"/>
+  <text x="720" y="440" font-family="Arial" font-size="12" text-anchor="middle">b2[8]</text>
+  
+  <!-- Addition symbols -->
+  <text x="300" y="435" font-family="Arial" font-size="16" text-anchor="middle" fill="#ff4d4f">+</text>
+  <text x="680" y="435" font-family="Arial" font-size="16" text-anchor="middle" fill="#ff4d4f">+</text>
+  
+  <!-- Summary box -->
+  <rect x="100" y="480" width="800" height="100" rx="10" ry="10" fill="#fff" stroke="#d9d9d9" stroke-width="2"/>
+  <text x="500" y="500" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Forward Pass Summary</text>
+  <text x="150" y="525" font-family="Arial" font-size="14" text-anchor="start">Step 1: hidden = X · W1^T + b1 → [4][16] × [16][32] + [32] = [4][32]</text>
+  <text x="150" y="550" font-family="Arial" font-size="14" text-anchor="start">Step 2: output = hidden · W2^T + b2 → [4][32] × [32][8] + [8] = [4][8]</text>
+  <text x="150" y="575" font-family="Arial" font-size="14" text-anchor="start">batch_size = 4, input_dim = 16, hidden_dim = 32, output_dim = 8</text>
+</svg>
