@@ -21,7 +21,7 @@ Y = X . W^T + b
 
 X is of shape [batch_size, input_dim]
 W is of shape [hidden_dim, input_dim]
-W^T is of shape [input_dim, hdden_dim]
+W^T is of shape [input_dim, hidden_dim]
 X.W^T is of shape [batch_size, hidden_dim]
 
 Step 1: Input to Hidden
