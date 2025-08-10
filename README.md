@@ -31,3 +31,6 @@ An advanced examination of how traditional neural network operations extend to m
 - Comprehensive backward pass derivations showing gradient flow through complex attention operations
 - C++ implementation with extensive documentation and implementation notes
 
+[Transformer Input Sequence Analysis.](https://github.com/KHAAdotPK/Transformer-Encoder-Decoder/blob/main/Implementation/ML/NLP/transformers/encoder-decoder/DOCUMENTS/input_sequence_analysis.md)
+
+[Transformer Position Encoding Analysis.](https://github.com/KHAAdotPK/Transformer-Encoder-Decoder/blob/main/Implementation/ML/NLP/transformers/encoder-decoder/DOCUMENTS/position_encoding_analysis.md)
