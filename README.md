@@ -32,5 +32,12 @@ An advanced examination of how traditional neural network operations extend to m
 - C++ implementation with extensive documentation and implementation notes
 
 [Transformer Input Sequence Analysis.](https://github.com/KHAAdotPK/Transformer-Encoder-Decoder/blob/main/Implementation/ML/NLP/transformers/encoder-decoder/DOCUMENTS/input_sequence_analysis.md)
+The input sequencer sets the stage for the transformer’s subsequent operations (e.g., attention mechanisms) by providing a consistent, padded, and masked inputs in numerical format. The paper emphasizes a from scratch implementation to deeply understand how pretrained embeddings are integrated into the transformer input pipeline.
 
 [Transformer Position Encoding Analysis.](https://github.com/KHAAdotPK/Transformer-Encoder-Decoder/blob/main/Implementation/ML/NLP/transformers/encoder-decoder/DOCUMENTS/position_encoding_analysis.md)
+The paper details a custom C++ position encoder as a critical component of the transformer's input processing pipeline. Transformers process tokens simultaneously (e.g., `"cat chased mouse" vs. "mouse chased cat" are same if you do not take into consideratio position encodings`) and position encoder enables the model to understand the order of words in variable-length sentences. 
+
+
+
+
+
