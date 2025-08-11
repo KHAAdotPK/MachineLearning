@@ -37,6 +37,9 @@ The input sequencer sets the stage for the transformer’s subsequent operations
 [Transformer Position Encoding Analysis.](https://github.com/KHAAdotPK/Transformer-Encoder-Decoder/blob/main/Implementation/ML/NLP/transformers/encoder-decoder/DOCUMENTS/position_encoding_analysis.md)
 The paper details a custom C++ position encoder as a critical component of the transformer's input processing pipeline. Transformers process tokens simultaneously (e.g., `"cat chased mouse" vs. "mouse chased cat" are same if you do not take into consideratio position encodings`) and position encoder enables the model to understand the order of words in variable-length sentences. 
 
+[Transformer Encoder Input Analysis.](https://github.com/KHAAdotPK/Transformer-Encoder-Decoder/blob/main/Implementation/ML/NLP/transformers/encoder-decoder/DOCUMENTS/transformer_encoder_input_analysis.md)
+This document analyzes debug output from a custom C++ implementation of the transformer architecture. The debug output shows the data flow through three main stages: `input sequence building`, `position encoding generation`, and final e`ncoder input preparation`. These are critical steps that enable the transformer to process sequential data effectively.
+
 
 
 
