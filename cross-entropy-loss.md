@@ -1,3 +1,10 @@
+```
+/*
+	cross-entropy-loss.md
+	Written by, Sohail Qayum Malik.
+ */
+```
+
 ### Cross-Entropy in Word2Vec Models (CBOW and Skip-gram)
 
 ```C++
