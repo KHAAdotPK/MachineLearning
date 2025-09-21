@@ -46,7 +46,8 @@ This document analyzes debug output from a custom C++ implementation of the tran
 A comprehensive technical guide covering the mathematical foundations and low-level implementation of Word2Vec algorithms (Skip-gram and CBOW). Features detailed C++ code examples showing context extraction, gradient computation, weight updates, and cross-entropy loss calculation. Includes custom memory management, matrix operations, and step-by-step backpropagation with real production-level implementation details. Perfect for engineers implementing Word2Vec from scratch or students wanting to understand the algorithmic internals beyond high-level Python tutorials.
 
 1.  [Propagation.](./propagation.md)
-1.  [Cross Entropy Loss.](./cross-entropy-loss.md)
+2.  [Cross Entropy Loss.](./cross-entropy-loss.md)
+3.  [Negative Sampling in CBOW.](https://github.com/KHAAdotPK/CBOW/blob/main/DOCUMENTS/NegativeSampling.md) 	
 ---
 
 
