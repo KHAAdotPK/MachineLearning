@@ -106,10 +106,13 @@ STEP 4: TOKENIZE ALL SENTENCES USING SAME VOCABULARY:
     - Word "cats" ALWAYS gets token ID 6 (in sentences 1, 3)
     - Word "programming" ALWAYS gets token ID 11 (in sentences 4, 5)
  
-/*
+
     The start and end tokens (like <BOS> for beginning of sequence and <EOS> for end of sequence) are not related to batch size, they're related to sequence structure and the decoding process itself.
-    Purpose of Start/End Tokens
-    Start Token (<BOS>, <START>, etc.):
+
+#### Purpose of Start/End Tokens
+
+- Start Token (<BOS>, <START>, etc.):
+   
     - Signals to the decoder where to begin generating the output sequence.
     - During training, the decoder input is shifted right, meaning the first token is always the start token.
     - It helps the model understand that it should start generating from this point.
@@ -117,7 +120,7 @@ STEP 4: TOKENIZE ALL SENTENCES USING SAME VOCABULARY:
     - Essential for the autoregressive nature of decoding
     - Example: If the target sequence is "Hello World", the decoder input during training would be "<START> Hello World".
     
-    End Token (<EOS>, <END>, etc.):
+- End Token (<EOS>, <END>, etc.):
     - Signals to the decoder when to stop generating tokens.
     - During training, the decoder learns to predict this token when it has completed generating the sequence
     - It helps the model understand when to stop generating further tokens.
@@ -126,24 +129,26 @@ STEP 4: TOKENIZE ALL SENTENCES USING SAME VOCABULARY:
     - It is crucial for tasks like text generation, where the model needs to know when to stop producing output.
     - Prevents the model from generating infinite sequences  
  
-    Why Batch Size Doesn't Matter
+#### Why Batch Size Doesn't Matter
+
     Whether you have:
+
         Batch size = 1: [<BOS> token1 token2 ... tokenN <EOS>]
         Batch size = 32: 32 sequences, each still needing [<BOS> ... <EOS>]
 
     Each sequence in the batch needs its own start/end tokens because:
 
-    1. The decoder processes each sequence independently
-    2. Each sequence needs to know its own boundaries
-    3. The attention mechanism relies on these positional cues       
- */
-/*
-    DECODER MASK STRUCTURE:
+        1. The decoder processes each sequence independently
+        2. Each sequence needs to know its own boundaries
+        3. The attention mechanism relies on these positional cues       
+ 
+#### DECODER MASK STRUCTURE:
     
     For sequence "I love cats" with tokens [1, 4, 5, 6, 2]:
     Position:  0(<START>)  1(I)  2(love)  3(cats)  4(<END>)
     
     Decoder Mask (Lower Triangular Matrix):
+
     ```
          0  1  2  3  4
     0 [  1  0  0  0  0 ]  # <START> can only see <START>
@@ -153,8 +158,7 @@ STEP 4: TOKENIZE ALL SENTENCES USING SAME VOCABULARY:
     4 [  1  1  1  1  1 ]  # <END> can see all previous tokens
     ```    
     Values: 1 = allowed to attend, 0 = masked (not allowed)
- */
-
+ 
 ```C++
 /* ************************************************************************************************************************************* */
 /*                                        EXPLANAION OF decoder_input, decoder_mask ENDS HERE                                            */
