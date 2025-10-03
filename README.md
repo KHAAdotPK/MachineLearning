@@ -40,6 +40,13 @@ The paper details a custom C++ position encoder as a critical component of the t
 [Transformer Encoder Input Analysis.](https://github.com/KHAAdotPK/Transformer-Encoder-Decoder/blob/main/Implementation/ML/NLP/transformers/encoder-decoder/DOCUMENTS/transformer_encoder_input_analysis.md)
 This document analyzes debug output from a custom C++ implementation of the transformer architecture. The debug output shows the data flow through three main stages: `input sequence building`, `position encoding generation`, and final e`ncoder input preparation`. These are critical steps that enable the transformer to process sequential data effectively.
 
+#### Transformer Decoder Layer.
+1.  [Outline of constructing Decoder Input Pipeline](https://github.com/KHAAdotPK/MachineLearning/blob/main/outline_of_constructing_decoder_input_pipeline.md)
+ 
+    - Demystifies core decoder concepts: "right-shifted inputs" for training and "look-ahead masks" for autoregressive generation
+    - Provides clear visualizations of the causal attention mask structure
+    - Written as a practical implementation blueprint with step-by-step examples
+    - Assumes no prior knowledge, making it accessible for beginners starting from scratch
 ---
 **Word2Vec Implementation Deep Dive: Complete Forward & Backward Propagation with C++ Code**
 ---

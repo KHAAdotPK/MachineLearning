@@ -1,15 +1,15 @@
 ```
 /*
-	propogation.md
+	propagation.md
 	Written by, Sohail Qayum Malik.
  */
 ```
 
 **Propagation** refers to the process of calculating and updating model weights through forward and backward passes.
 
-## __Forward__ ~~and __Backward__~~ propogation in `CBOW` and `Skip-gram` 
+## __Forward__ ~~and __Backward__~~ propagation in `CBOW` and `Skip-gram` 
 **Word2Vec** has two **word embedding algorithms**, the `Skip-gram` and `CBOW`. `Skip-gram` predicts context words for a center/target word, while `CBOW` predicts the center/target word for given context words.
-#### Steps involved in Forward propogation are more or less similar in `CBOW` and `Skip-gram`
+#### Steps involved in Forward propagation are more or less similar in `CBOW` and `Skip-gram`
 1. **Context Extraction**:
 - Both `Skip-gram` and `CBOW` require identifying the context words. For `CBOW`, this involves averaging the embeddings of all context words, whereas, in `Skip-gram`, this would typically involve extracting the embedding for a single target word.
 - __Example of context extraction in__ `Skip-gram`
@@ -69,7 +69,7 @@ Collective<E> u = Numcy::dot(h, W2);
 ```
 This transformation step(`the dot product`) is crucial in both algorithms to map the hidden representation to the vocabulary space.
 
-3. **Positive predicted probablities**:
+3. **~~Positive~~ predicted probablities**:
 ```C++
         /*
             The resulting vector (u) is passed through a softmax function to obtain the predicted probabilities (y_pred). 
@@ -80,7 +80,7 @@ This transformation step(`the dot product`) is crucial in both algorithms to map
     - In `Skip-gram`, this output represents the likelihood of each word being one of the context words for the given center word.
     - In `CBOW`, this output represents the likelihood of each word being the target word, given the context words.
 
-## ~~__Forward__ and~~ __Backward__ propogation in `CBOW` and `Skip-gram` 
+## ~~__Forward__ and~~ __Backward__ propagation in `CBOW` and `Skip-gram` 
 In `Skip-gram`, the objective is to predict the surrounding context words based on the center/target word, so during **backward propagation**, you compare the ~~positive~~ **predicted probabilities** (from **forward propagation**) to a **one-hot** encoded representation of the context words. This helps to update the weights based on how well the model predicted the actual context words given the center/target word.
 ```C++    
      /*
@@ -122,7 +122,10 @@ In `Skip-gram`, the objective is to predict the surrounding context words based 
         what is an error signal?
         -------------------------
         1. For the correct context word (where oneHot is 1), the gradient is (predicted_probabilities - 1), meaning the model's prediction was off by that much.
-        2. For all other words (where oneHot is 0), the gradient is simply predicted_probabilities, meaning the model incorrectly assigned a nonzero probability to these words(meaning the model's prediction was off by that much, which the whole of predicted_probability for that out of context word).        
+        2. For all other words (where oneHot is 0), the gradient is simply predicted_probabilities, meaning the model incorrectly assigned a nonzero probability to these words(meaning the model's prediction was off by that much, which the whole of predicted_probability for that out of context word).
+
+        The gradient calculation comes from the derivative of cross-entropy loss
+        (see cross-entropy.md for detailed mathematical derivation)
      */
     Collective<T> grad_u = Numcy::subtract<double>(fp.positive_predicted_probabilities, oneHot);
 
