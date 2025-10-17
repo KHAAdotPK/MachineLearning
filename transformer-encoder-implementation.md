@@ -83,7 +83,14 @@
 	    EncoderFeedForwardNetwork<t> ffn; // Forward Feed Network
 ```
 
-#### We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm(x + Sublayer​(x))(Post LN: Apply sublayer → Add residual → Normalize), where Sublayer(x) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension dmodel=512. 
+#### We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1].
+ 
+```C++
+	Collective<t> output, residual; /* residual: Store the output for the residual connection */
+	EncoderLayerNormalization<t> /*norm1*/ attention_norm, /*norm2*/ ffn_norm; // Layer Normalization
+```
+
+#### That is, the output of each sub-layer is LayerNorm(x + Sublayer​(x))(Post LN: Apply sublayer → Add residual → Normalize), where Sublayer(x) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension dmodel=512. 
 
 ```C++
        if (norm_position == PreAttentionAndFeedForwardNetwork)
