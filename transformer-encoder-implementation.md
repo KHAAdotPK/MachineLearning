@@ -15,6 +15,32 @@ This series of documents provide a comprehensive analysis of a custom C++ transf
 
 #### The encoder is composed of a stack of N=6 identical layers.
 ---
+```TEXT
+/*
+    ==================== Encoder Architecture ====================
+    
+    	    Input Embeddings + Positional Encoding
+        		    ↓
+	    ┌─────────────────────────────────────┐
+	    │  Encoder Layer 1                    │
+	    │  ┌──────────────────────────────┐   │
+	    │  │ Multi-Head Self-Attention    │   │
+	    │  └──────────────────────────────┘   │
+	    │            ↓ (+ residual)           │
+	    │       Layer Normalization           │
+	    │            ↓                        │
+	    │  ┌──────────────────────────────┐   │
+	    │  │ Feed-Forward Network         │   │
+	    │  └──────────────────────────────┘   │
+	    │            ↓ (+ residual)           │
+	    │       Layer Normalization           │
+	    └─────────────────────────────────────┘
+	        	    ↓
+		    [Repeat 5 more times]
+            		    ↓
+     Encoded Output (ready for decoder or downstream task)
+*/
+```
 ```C++
 /*
     EncoderLayerList represents a doubly linked list of encoder layers in a Transformer encoder stack.
