@@ -20,25 +20,25 @@ This series of documents provide a comprehensive analysis of a custom C++ transf
     ==================== Encoder Architecture ====================
     
     	    Input Embeddings + Positional Encoding
-        		    ↓
-	    ┌─────────────────────────────────────┐
-	    │  Encoder Layer 1                    │
-	    │  ┌──────────────────────────────┐   │
-	    │  │ Multi-Head Self-Attention    │   │
-	    │  └──────────────────────────────┘   │
-	    │            ↓ (+ residual)           │
-	    │       Layer Normalization           │
-	    │            ↓                        │
-	    │  ┌──────────────────────────────┐   │
-	    │  │ Feed-Forward Network         │   │
-	    │  └──────────────────────────────┘   │
-	    │            ↓ (+ residual)           │
-	    │       Layer Normalization           │
-	    └─────────────────────────────────────┘
-	        	    ↓
-		    [Repeat 5 more times]
+        		             ↓           
+	        ┌─────────────────────────────────────┐
+	        │  Encoder Layer 1                    │
+	        │  ┌──────────────────────────────┐   │
+	        │  │ Multi-Head Self-Attention    │   │
+	        │  └──────────────────────────────┘   │
+	        │            ↓ (+ residual)           │
+	        │       Layer Normalization           │
+	        │            ↓                        │
+	        │  ┌──────────────────────────────┐   │
+	        │  │ Feed-Forward Network         │   │
+	        │  └──────────────────────────────┘   │
+	        │            ↓ (+ residual)           │
+	        │       Layer Normalization           │
+	        └─────────────────────────────────────┘
+	            	    ↓
+		        [Repeat 5 more times]
             		    ↓
-     Encoded Output (ready for decoder or downstream task)
+        Encoded Output (ready for decoder or downstream task)
 */
 ```
 ```C++
