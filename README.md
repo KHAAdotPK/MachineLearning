@@ -23,9 +23,8 @@ A comprehensive exploration of forward and backward passes in fully connected ne
 - Complete derivation of gradient calculations for backpropagation
 
 [A Line-by-Line C++ Implementation of Transformer Encoder Layer.](./transformer-encoder-implementation.md)
-This article tries to bridge thr gap paper and the code code:
+This article tries to bridge the gap between paper and the code:
 
-- Direct paper-to-code mapping
 - Shows both original (Post-LN) and modern (Pre-LN) variants
 - Describes proper residual connections and layer normalization ordering
  
