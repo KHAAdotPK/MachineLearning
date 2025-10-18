@@ -24,20 +24,20 @@ This series of documents provide a comprehensive analysis of a custom C++ transf
 	        ┌─────────────────────────────────────┐
 	        │  Encoder Layer 1                    │
 	        │  ┌──────────────────────────────┐   │
-	        │  │ Multi-Head Self-Attention    │   │
+	        │  │   Multi-Head Self-Attention  │   │
 	        │  └──────────────────────────────┘   │
-	        │            ↓ (+ residual)           │
-	        │       Layer Normalization           │
-	        │            ↓                        │
+	        │                ↓ (+ residual)       │
+	        │           Layer Normalization       │
+	        │                ↓                    │
 	        │  ┌──────────────────────────────┐   │
-	        │  │ Feed-Forward Network         │   │
+	        │  │    Feed-Forward Network      │   │
 	        │  └──────────────────────────────┘   │
-	        │            ↓ (+ residual)           │
+	        │               ↓ (+ residual)        │
 	        │       Layer Normalization           │
 	        └─────────────────────────────────────┘
-	            	    ↓
-		        [Repeat 5 more times]
-            		    ↓
+	            	        ↓
+		            [Repeat 5 more times]
+            		        ↓
         Encoded Output (ready for decoder or downstream task)
 */
 ```
@@ -226,6 +226,18 @@ struct EncoderLayerList
           output = output + residual;     // Add residual
           output = ffn_norm.forward(output); // Layer norm after residual
        }
+```
+
+#### Example usage
+
+```C++
+    buildInputSequence(icp, iv, is, mask, attentionMaskInputSequence, W1, !ALLOW_REDUNDANCY); 
+    buildPositionEncoding(pe, dt, dm, is, attentionMaskInputSequence /*mask*/, mntpl_input, sin_transformed_product, cos_transformed_product); 
+
+    ei = pe + is;
+
+    Encoder<t> encoder(ei.getShape().getNumberOfColumns(), DEFAULT_NUMBER_OF_LAYERS_FOR_ENCODER_HYPERPARAMETER, DEFAULT_NUMBER_OF_ATTENTION_HEADS_HYPERPARAMETER, DEFAULT_DROP_OUT_RATE_HYPERPARAMETER);                                 
+    Collective<t> encoder_output = encoder.forward(ei, mask, attentionMaskInputSequence);          
 ```
 
 
