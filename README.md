@@ -22,6 +22,13 @@ A comprehensive exploration of forward and backward passes in fully connected ne
 - Precise mathematical formulations with practical C-style notation
 - Complete derivation of gradient calculations for backpropagation
 
+[A Line-by-Line C++ Implementation of Transformer Encoder Layer.](./transformer-encoder-implementation.md)
+This article tries to bridge thr gap paper and the code code:
+
+- Direct paper-to-code mapping
+- Shows both original (Post-LN) and modern (Pre-LN) variants
+- Describes proper residual connections and layer normalization ordering
+ 
 [Fully Connected Passes in Transformer Attention Layers.](./fully_connected_passes_in_transformer_attention_layer.txt)
 An advanced examination of how traditional neural network operations extend to modern transformer architectures:
 
