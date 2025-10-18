@@ -178,7 +178,7 @@ struct EncoderLayerList
 	template <typename t = double>
 	class EncoderLayer
 	{       
-            Attention<t> attention;
+        Attention<t> attention;
 	    EncoderFeedForwardNetwork<t> ffn; // Forward Feed Network
 ```
 

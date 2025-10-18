@@ -27,6 +27,12 @@ This article tries to bridge the gap between paper and the code:
 
 - Shows both original (Post-LN) and modern (Pre-LN) variants
 - Describes proper residual connections and layer normalization ordering
+
+[From Single-Head to Multi-Head Attention Layer.](./from_single_head_to_multi_head_attention_layer.md)
+W.I.P
+
+ - W.I.P
+ - W.I.P
  
 [Fully Connected Passes in Transformer Attention Layers.](./fully_connected_passes_in_transformer_attention_layer.txt)
 An advanced examination of how traditional neural network operations extend to modern transformer architectures:
