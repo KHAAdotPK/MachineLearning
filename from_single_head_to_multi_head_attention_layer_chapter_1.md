@@ -1,6 +1,6 @@
 ```C++
     /*
-        from_single_head_to_multi_head_attention_layer.md
+        from_single_head_to_multi_head_attention_layer_chapter_1.md
         Q@khaa.pk
      */  
 ```
@@ -13,9 +13,38 @@
 
 This series of documents provide a comprehensive analysis of a custom C++ transformer implementation, focusing on the complete pipeline from input sequence processing through encoder input/output preparation, decoder input/output preparation. The implementation represents a complete from-scratch build of the transformer architecture, including custom word embeddings, novel position encoding, and sophisticated build system architecture.
 
-### From Single-Head to Multi-Head Attention Layer
+### From Single-Head to Multi-Head Attention Layer. Chapter 1.   
 #### Written by, Sohail Qayum Malik
 ---
+
+$$**A Hypothetical Single Head Attention Layer.**$$
+
+#### **A Quick Clarification on Dimensions:** d<sub>k</sub>, d<sub>v</sub>, d<sub>model</sub>
+
+Before we dive into the code, it's crucial to clear up a common point of confusion introduced by the paper's notation.
+
+You might wonder and ask: "If we are talking about a "hypothetical single attention head", why is the paper using d<sub>k</sub> and not d<sub>model</sub> for the scaling factor?"
+
+This is an excellent question. Let's establish some ground rules for the "Attention" function:
+
+  1. **Query and Key:** Dimensions (d<sub>q</sub>, d<sub>k</sub>): To compute the dot product Q.K<sup>T</sup>, the "inner" dimensions must match. This means the dimension of a query vector (d<sub>q</sub>) **must be equal** to the dimension of a key vector (d<sub>k</sub>).
+
+  2. **Value Dimension:** (d<sub>v</sub>): The dimension of the value vector d<sub>v</sub> is **independent**. It can be different from d<sub>q</sub>, d<sub>k</sub>. The output of the attention function (`softmax(...).V`) will have the dimension d<sub>v</sub>. 
+
+  3. **The Scaling Factor:** The scaling is done by 1/&radic;d<sub>q</sub> or 1/&radic;d<sub>k</sub>. The purpose is to scale down the dot product, which is calculated using **Q** and **K**. Therefore, the scaling factor is always tied to d<sub>k</sub> (which is equal to d<sub>q</sub>).
+
+**Connecting This to the Paper:**  
+
+  1. **Hypothetical Single-Head Model:** If you were to build a simple model with only one attention head, you would likely set d<sub>q</sub> = d<sub>k</sub> = d<sub>v</sub> = d<sub>model</sub>. In this specific case, your scaling factor would be 1/&radic;d<sub>model</sub>.
+
+  2. **The Paper's Approach (Preparing for Multi-Head):** The authors define "Scaled Dot-Product Attention" (3.2.1) as the general building block for their "Multi-Head Attention" (3.2.2). In the multi-head design, the model's d<sub>model</sub> is split among $h$ heads. This means each head works with smaller dimensions.
+
+This is why the paper immediately introduces the notation:
+
+  - d<sub>k</sub> = d<sub>model</sub> / $h$
+  - d<sub>v</sub> = d<sub>value</sub> / $h$
+
+So, when the paper says "queries and keys of dimension $d_k$", they are referring to the dimension inside one attention head. Our C++ implementation will follow this logic. We will calculate the dimensions for a single head first, and then use those dimensions for our scaling factor.  
 
 #### 3.2 Attention
 
@@ -99,8 +128,17 @@ This series of documents provide a comprehensive analysis of a custom C++ transf
 
 #### 3.2.1 Scaled Dot-Product Attention
 
-We call our particular attention "Scaled Dot-Product Attention" (Figure 2). The input consists of queries and keys of dimension d<sub>k</sub>, and values of dimension d<sub>v</sub>. We compute the dot products of the query with all keys, divide each by sqrt(`d_k`), and apply a softmax function to obtain the weights on the values.
+We call our particular attention "Scaled Dot-Product Attention" (Figure 2). The input consists of queries and keys of dimension d<sub>k</sub>, and values of dimension d<sub>v</sub>. We compute the dot products of the query with all keys, divide each by &radic;d<sub>k</sub>,  and apply a softmax function to obtain the weights on the values.
 
+In practice, we compute the attention function on a set of queries simultaneously, packed together into a matrix Q. The keys and values are also packed together into matrices K and V. We compute the matrix of outputs as:
+
+
+                                  Attention (Q, K, V) = softmax (QK<sup>T</sup>/sqrt(d<sub>k</sub>))V
+
+The two most commonly used attention functions are additive attention [2], and dot-product (multiplicative) attention. Dot-product attention is identical to our algorithm, except for the scaling factor of 1/&radic;d<sub>k</sub>. Additive attention computes the compatibility function using a feed-forward network with a single hidden layer. While the two are similar in theoretical complexity, dot-product attention is much faster and more space-efficient in practice, since it can be implemented using highly optimized matrix multiplication code.
+
+While for small values of d<sub>k</sub> the two mechanisms perform similarly, additive attention outperforms dot product attention without scaling for larger values of d<sub>k</sub> [3]. We suspect that for large values of d<sub>k</sub>, the dot products grow large in magnitude, pushing the softmax function into regions where it has extremely small gradients 1. To counteract this effect, we scale the dot products by 1/&radic;d<sub>k</sub>.
+  
 ```C++
   /*	
      @d_model, name from the paper "Attention is all you need" we call it "dimensionsOfTheModel".	
@@ -120,7 +158,26 @@ We call our particular attention "Scaled Dot-Product Attention" (Figure 2). The 
     // Add assertion to ensure even division
     assert(d_model % num_heads == 0);
   */
- cc_tokenizer::string_character_traits<char>::size_type dimensionsOfAttentionHead = dimensionsOfAttentionHead(floor((t)(d_model/num_heads)));
+ cc_tokenizer::string_character_traits<char>::size_type dimensionsOfAttentionHead = dimensionsOfAttentionHead(floor((t)(d_model/num_heads))); // d_k or d<sub>k</sub>
+ 
+ // In the following comment section d_k and d<sub>k</sub> are interchangeable. 
+ /*    
+    As the paper states, their algorithm is identical to standard dot-product attention except for the scaling factor of 1/sqrt(d_k). Why is this scaling necessary? 
+    Imagine that the dimensions of your query and key vectors d<sub>model</sub> (in case of single head attention) and d<sub>k</sub> (in case of multi-head attention) are very large.  When you take the dot product of two random vectors in a high-dimensional space, the resulting value can become very large in magnitude. 
+    
+    Now, recall the next step in the attention mechanism: applying the softmax function to these scores to turn them into a probability distribution (where all attention weights sum to 1). 
+
+    When you feed very large numbers into the softmax function, it pushes the outputs towards the extremes: 
+
+      - One or a few outputs will get very close to 1.
+      - The rest will get very close to 0.
+
+    This is known as the "**vanishing gradient**" problem. During training, the gradients (which are used to update the model) become extremely small for the positions with attention weights near `0`, making it hard for the model to learn. The attention distribution becomes too "**sharp**" and focused, losing its ability to attend to multiple words softly.
+    
+    The Solution: Scaling
+    ---------------------
+    By dividing the dot product scores by &radic;d_k .or. &radic;d<sub>k</sub> .or. &radic;d<sub>model</sub> scale down the variance of the scores, keeping them in a range that is more stable for the `softmax` function. This results in "softer" attention distributions and much more stable gradients, which is crucial for effective training. 
+  */
  t scaleFactor = (1.0 / std::sqrt(dimensionsOfAttentionHead));	
 ```
 ```C++
@@ -162,7 +219,7 @@ We call our particular attention "Scaled Dot-Product Attention" (Figure 2). The 
     
                                             -: CONSIDER THIS COMMENT BLOCK MY MIND FART ENDS HERE :-
    */
-  // This comment block is only needed if you follow option 1 from the above comment block and donot not modify the scalling factor as also suggested in th above commnet block
+  // This comment block is only needed if you follow option 1 from the above comment block and donot not modify the scaling factor as also suggested in th above commnet block
   /**********************************************************************************************************************************************************/
   /*Note: Only query and key are scaled by the square root of the head dimension (d_k) in the forward pass                                                  */
   /*      because the attention scores are computed as the dot product of query and key.                                                                    */
@@ -177,9 +234,10 @@ We call our particular attention "Scaled Dot-Product Attention" (Figure 2). The 
 ```
 ```C++
   /*
-     The attention score calculation, one of the following two...
-     - S = Q.K^T 
-     - S = Q.K^T . scaleFactor
+     The attention score calculation, one of the following two.
+     If you decide to go with the option 1. then please go through "MIND FART" comment block
+     1. S = Q.K^T 
+     2. S = Q.K^T . scaleFactor
    */
   /* Compute scaled dot-product attention scores */
   scores = Numcy::matmul<t>(query, Numcy::transpose(key)) * scaleFactor; 

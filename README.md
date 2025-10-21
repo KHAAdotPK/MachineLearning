@@ -28,12 +28,14 @@ This article tries to bridge the gap between paper and the code:
 - Shows both original (Post-LN) and modern (Pre-LN) variants
 - Describes proper residual connections and layer normalization ordering
 
-[From Single-Head to Multi-Head Attention Layer.](./from_single_head_to_multi_head_attention_layer.md)
-W.I.P
+#### Attention Layer:
 
- - W.I.P
- - W.I.P
- 
+> This article is two part discussion about **Transformer** $Attention$ $Layer$ in the light of "$Attention$ $is$ $all$ $you$ $need$" paper. In the first article we will explore a "hypothetical single head attention layer" and then in the second article we will discuss "multi-head attention layer".
+    
+[Chapter 1. From Single-Head to Multi-Head Attention Layer](./from_single_head_to_multi_head_attention_layer_chapter_1.md)
+
+[Chapter 2. From Single-Head to Multi-Head Attention Layer](./from_single_head_to_multi_head_attention_layer_chapter_2.md)
+   
 [Fully Connected Passes in Transformer Attention Layers.](./fully_connected_passes_in_transformer_attention_layer.txt)
 An advanced examination of how traditional neural network operations extend to modern transformer architectures:
 
