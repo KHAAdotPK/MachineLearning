@@ -9,9 +9,19 @@
 #### Written by, Sohail Qayum Malik
 ---
 
+> **Note to Readers:** This document is a work in progress. You may encounter occasional typos and formatting inconsistencies as the content is being actively developed and refined. The focus at this stage is on technical accuracy and conceptual clarity. A thorough editorial review will be conducted in future revisions. Thank you for your understanding.
+
+`"Readers should be aware that this article represents an ongoing project. The information and code contained herein are preliminary and will be expanded upon in future revisions."`
+
 #### Project Overview
 
 This series of documents provide a comprehensive analysis of a custom C++ transformer implementation, focusing on the complete pipeline from input sequence processing through encoder input/output preparation, decoder input/output preparation. The implementation represents a complete from-scratch build of the transformer architecture, including custom word embeddings, novel position encoding, and sophisticated build system architecture.
+
+#### 3.1 Encoder and Decoder Stacks
+
+**Enoder**
+
+The encoder is composed of a stack of $N$ = $6$ identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position-wise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is **$LayerNorm$**(**$x$** + **$Sublayer$**(**$x$**)), where **$Sublayer$**(**$x$**) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension d<sub>model</sub> = 512.
 
 #### The encoder is composed of a stack of N=6 identical layers.
 ---
