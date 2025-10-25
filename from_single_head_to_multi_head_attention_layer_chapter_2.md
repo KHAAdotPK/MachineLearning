@@ -11,4 +11,24 @@
 
 Hey readers, Chapter 2 on multi-head attention isn’t ready just yet, and here’s why: I’m working through some tricky details on reshaping the encoder inputs for the multi-head attention layer. My input is a row vector of shape `(3, 16)` (3 tokens, 16 features), and splitting it into multiple heads (like 8 or 6) requires careful handling to ensure the feature dimension divides evenly. For example, with 8 heads, each head gets a clean `(3, 2)` slice, but 6 heads causes issues since `16 / 6` isn’t an integer. I’m refining the logic to reshape the input properly (possibly with padding for cases like 6 heads) to make the code robust and clear. This is part of my larger C++ Transformer project, and I want to get it right before sharing. Stay tuned for the update, and thanks for following along!
 
+#### 3.2.2 
+
+Instead of performing a single attention function with d<sub>model</sub>-dimensional keys, values and queries, we found it beneficial to linearly project the queries, keys and values $h$ times with different, learned linear projections to d<sub>k</sub>, d<sub>k</sub> and d<sub>v</sub> dimensions, respectively. On each of these projected versions of queries, keys and values we then perform the attention function in parallel, yielding $d_v$-dimensional output values. These are concatenated and once again projected, resulting in the final values, as depicted in Figure 2. 
+
+Multi-Head Attention allows the model to jointly attend to information from different representation subspaces at different positions. With a single attention head, averaging inhibits this.
+
+$$\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \dots, \text{head}_h)W^O$$
+
+$$\text{where head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)$$
+
+Where the projections are parameter matrices 1$W_i^Q \in \mathbb{R}^{d_{\text{model}} \times d_k}$, 2$W_i^K \in \mathbb{R}^{d_{\text{model}} \times d_k}$, 3$W_i^V \in \mathbb{R}^{d_{\text{model}} \times d_v}$ and 4$W^O \in \mathbb{R}^{hd_v \times d_{\text{model}}}$.5
+In this work we employ 6$h = 8$ parallel attent7ion heads. For each of these we use $d_k = d_v = d_{\text{model}}/h = 64$. Due to the reduced dimension of each head, the total computational cost is similar to that of single-head attention with full dimensionality.
+
+
+
+```C++
+```
+```C++
+```
+
 

@@ -52,9 +52,9 @@ So, when the paper says "queries and keys of dimension $d_k$", they are referrin
 
     1. The three projections **Q**, **K**, **V** from input **X** using **learned weight**s matrices
 
-        -  **Q** = X . W^Q 
-        -  **K** = X . W^K 
-        -  **V** = X . W^V
+        -  **Q** = X . W<sup>Q</sup>
+        -  **K** = X . W<sup>K</sup>
+        -  **V** = X . W<sup>V</sup>
 
         #### Learned Weights?
         ```C++
@@ -62,11 +62,12 @@ So, when the paper says "queries and keys of dimension $d_k$", they are referrin
          Initialization (Random Weights)
          At initialization: They're random (not learned yet)
          */
-         queryWeights = Numcy::Random::randn<t>(dim);
-         keyWeights = Numcy::Random::randn<t>(dim);
-         valueWeights = Numcy::Random::randn<t>(dim);
+         queryWeights = Numcy::Random::randn<t>(dim); // W^Q
+         keyWeights = Numcy::Random::randn<t>(dim);   // W^K 
+         valueWeights = Numcy::Random::randn<t>(dim); // W^V
 
-         outputWeights = Numcy::Random::randn<t>(dim);
+         // Output projection weights 
+         outputWeights = Numcy::Random::randn<t>(dim); // W^O
 
         /*
          The weights learn through this process of gradient descent! 
@@ -95,8 +96,8 @@ So, when the paper says "queries and keys of dimension $d_k$", they are referrin
         ```         
     2. The attention score calculation, one of the following two
 
-        - **S** = **Q**.**K**^T/sqrt(d_k) 
-        - **S** = **Q**.**K**^T 
+        - **S** = **Q**.**K**<sup>T</sup>/&radic;d<sub>k</sub> 
+        - **S** = **Q**.**K**<sup>T </sup>
         ```C++
         // Before using the last method to calulate scores from the two given, please know what you are doing.
         ```  
@@ -112,16 +113,16 @@ So, when the paper says "queries and keys of dimension $d_k$", they are referrin
 
     5. Output projection or Final output
 
-        -  Y = **O** . W^**O**   
+        -  Y = **O** . W<sup>**O**</sup>   
         -  This final output **Y** is in the simplified equation form: output = input × weights, possibly with a bias(many frameworks include them; some simplified implementations skip them).
 
             -  Biases are often included in the Q, K, V projections and output projection in practice, but frequently omitted in explanations for clarity
            
 
-    This (Y = O . W^O) resembles the common neural network transformation: Y = XW^T + b (bias often omitted in attention layers), highlighting that attention can also be viewed as a series of linear layers followed by weighted combination through softmax. That is**...** the attention mechanism is fundamentally a neural network operation, but with a crucial twist
+    This (Y = O . W<sup>O</sup>) resembles the common neural network transformation: Y = X.W<sup>T</sup> + **b** (**bias** often omitted in attention layers), highlighting that attention can also be viewed as a series of linear layers followed by weighted combination through softmax. That is **...** the attention mechanism is fundamentally a neural network operation, but with a crucial twist
 
-        - Standard NN: Y = XW (fixed transformation)
-        - Attention: Y = (softmax(QK^T / sqrt(d_k)) · V) · W^O (dynamic, content-dependent transformation)
+        - Standard NN: Y = X.W^T (fixed transformation)
+        - Attention: Y = (softmax(Q.K^T / sqrt(d_k))·V)·W^O (dynamic, content-dependent transformation)
 
     That is why I previously mentioned the fact that, the "weights" in attention (the softmax scores A) are computed dynamically based on the input content, not learned parameters. This is the magic of attention!  
 
@@ -132,8 +133,7 @@ We call our particular attention "Scaled Dot-Product Attention" (Figure 2). The 
 
 In practice, we compute the attention function on a set of queries simultaneously, packed together into a matrix Q. The keys and values are also packed together into matrices K and V. We compute the matrix of outputs as:
 
-
-                                  Attention (Q, K, V) = softmax (QK<sup>T</sup>/sqrt(d<sub>k</sub>))V
+$$\text{Attention}(Q, K, V) = \text{softmax}(Q.K^T/sqrt(d_k))V$$
 
 The two most commonly used attention functions are additive attention [2], and dot-product (multiplicative) attention. Dot-product attention is identical to our algorithm, except for the scaling factor of 1/&radic;d<sub>k</sub>. Additive attention computes the compatibility function using a feed-forward network with a single hidden layer. While the two are similar in theoretical complexity, dot-product attention is much faster and more space-efficient in practice, since it can be implemented using highly optimized matrix multiplication code.
 
@@ -225,11 +225,11 @@ While for small values of d<sub>k</sub> the two mechanisms perform similarly, ad
   /*      because the attention scores are computed as the dot product of query and key.                                                                    */
   /*      This scaling prevents the dot-product values from growing too large in magnitude, which would push softmax into regions with very small gradients.*/
   /**********************************************************************************************************************************************************/ 
-  // Q: XW^Q, X is the input to the MHA layer(a.k.a ei_query)                
+  // Q: X.W^Q, X is the input to the MHA layer(a.k.a ei_query)                
   query = Numcy::matmul<t>(ei_query, queryWeights);
-  // K: XW^K, X is the input to the MHA layer(a.k.a ei_key) 
+  // K: X.W^K, X is the input to the MHA layer(a.k.a ei_key) 
   key = Numcy::matmul<t>(ei_key, keyWeights);
-  // V: XW^V, X is the input to the MHA layer(a.k.a ei_value)                
+  // V: X.W^V, X is the input to the MHA layer(a.k.a ei_value)                
   value = Numcy::matmul<t>(ei_value, valueWeights);
 ```
 ```C++
@@ -260,13 +260,13 @@ While for small values of d<sub>k</sub> the two mechanisms perform similarly, ad
 ```C++
   /*
        Final Projected Output: Attention Projection Output = O*Wo = OWo Matrix
-         Y = O · Wo
+         Y = O · W^O
          - O
            Output from attention before output projection (a.k.a "output")
-         - Wo 
+         - W^O 
            Output projection weights (a.k.a "outputWeights")
                     
-         Let Y = O*Wo = OWo Matrix (a.k.a "Output matrix")
+         Let Y = O.W^O // (a.k.a "Output matrix")
          In Step-1 of the backward pass, we have dL/dY = incoming_gradient when Y = OWo
    */
   output = Numcy::matmul<t>(output, outputWeights);          
