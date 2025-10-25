@@ -21,8 +21,8 @@ $$\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \dots, \text{head}_h)
 
 $$\text{where head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)$$
 
-Where the projections are parameter matrices 1$W_i^Q \in \mathbb{R}^{d_{\text{model}} \times d_k}$, 2$W_i^K \in \mathbb{R}^{d_{\text{model}} \times d_k}$, 3$W_i^V \in \mathbb{R}^{d_{\text{model}} \times d_v}$ and 4$W^O \in \mathbb{R}^{hd_v \times d_{\text{model}}}$.5
-In this work we employ 6$h = 8$ parallel attent7ion heads. For each of these we use $d_k = d_v = d_{\text{model}}/h = 64$. Due to the reduced dimension of each head, the total computational cost is similar to that of single-head attention with full dimensionality.
+Where the projections are parameter matrices W<sub>i</sub><sup>Q</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>K</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>V</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>v</sub></sup> and W<sup>O</sup> **&#8712;** $R$<sup>hd<sub>v</sub>**x**d<sub>model</sup>   
+In this work we employ $h = 8$ parallel attention heads. For each of these we use $d_k = d_v = d_{\text{model}}/h = 64$. Due to the reduced dimension of each head, the total computational cost is similar to that of single-head attention with full dimensionality.
 
 
 
