@@ -24,7 +24,24 @@ $$\text{where head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)$$
 Where the projections are parameter matrices W<sub>i</sub><sup>Q</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>K</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>V</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>v</sub></sup> and W<sup>O</sup> **&#8712;** $R$<sup>hd<sub>v</sub>**x**d<sub>model</sup>   
 In this work we employ $h = 8$ parallel attention heads. For each of these we use $d_k = d_v = d_{\text{model}}/h = 64$. Due to the reduced dimension of each head, the total computational cost is similar to that of single-head attention with full dimensionality.
 
-# Multi-Head Attention Mechanism
+**Standard Q, K, V dimensions:** In the standard multi-head attention mechanism (e.g., as defined in the Transformer model from "Attention is All You Need"), the input matrices ( Q ), ( K ), and ( V ) typically have the same second dimension, d<sub>model</sub> meaning:
+
+- Q, K, V &#8712; $R$<sup>seq_len**x**d<sub>model</sub></sup> 
+- The projection matrices are then:
+
+  - $W$<sub>i</sub><sup>Q</sup>, $W$<sub>i</sub><sup>K</sup> &#8712; $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup> 
+  - $W$<sub>i</sub><sup>V</sup> &#8712; $R$<sup>d<sub>model</sub>**x**d<sub>v</sub></sup>
+
+This ensures that the rows of all projection matrices correspond to d<sub>model</sub>, the ~~word~~ embedding dimension of the inputs. 
+
+**V can have diffrent length of ~~word~~ embeddings:** In the examples of this article $V$ has different second dimensions. The attention mechanism doesn’t strictly require ( V ) to have the same number of columns as ( Q ) and ( K ), because: 
+
+- The attention scores are computed using QW<sub>i</sub><sup>Q</sup> and KW<sub>i</sub><sup>K</sup> (For both the second dimensions need to be same beuase we take product of QW<sub>i</sub><sup>Q</sup> and $transpose$ of KW<sub>i</sub><sup>K</sup>).
+- VW<sub>i</sub><sup>V</sup> only needs to be compatible with the $softmax$ output: $softmax$(QW<sub>i</sub><sup>Q</sup>, **transpose**(KW<sub>i</sub><sup>K</sup>)).**VW<sub>i</sub><sup>V</sup>**.
+
+This flexibility allows ( V ) to have a different embedding dimension d<sub>v</sub>**x**$h$
+
+#### Multi-Head Attention Mechanics
 
 The multi-head attention mechanism is defined as follows:
 
@@ -40,8 +57,8 @@ $$
 
 The projections are parameter matrices with the following dimensions:
 - $W_i^Q \in \mathbb{R}^{d_{\text{model}} \times d_k}$
-- $W_i^K \in \mathbb{R}^{d_{\text{model}} \times d_k}$
-- $W_i^V \in \mathbb{R}^{d_{\text{model}} \times d_v}$ Though inconsistent from the standard nut here d<sub>modle</sub> can have different value
+- $W_i^K \in \mathbb{R}^{d_{\text{model}} \times d_k}$ 
+- $W_i^V \in \mathbb{R}^{d_{\text{model}} \times d_v}$ ( 1C ): This notation can be confusing. The first dimension, d<sub>model</sub> must match the feature dimension of the input $V$ matrix. This is inconsistent with the standard, where $V$ typically shares the same d<sub>model</sub> as inputs $Q$ and $K$. As shown in the example, $V$ **&#8712;** $R$<sup>3**x**8</sup> while $Q$, $K$ **&#8712;** $R$<sup>3**x**16</sup>. Therefore, $W$<sub>i</sub><sup>V</sup> should be **&#8712;** $R$<sup>8**x**d<sub>v</sub></sup>. In this specific case, the input dimension $8$ corresponds to $h$.d<sub>v</sub>, so a more precise notation for this example would be $W$<sub>i</sub><sup>V</sup> **&#8712;** $R$<sup>hd<sub>v</sub>**x**d<sub>v</sub></sup>.
 - $W^O \in \mathbb{R}^{h d_v \times d_{\text{model}}}$
 
 ## Example Calculation
@@ -59,7 +76,7 @@ Suppose we have the following input dimensions:
 The projection matrices for the first head ($i=1$) are:
 - $W_1^Q \in \mathbb{R}^{16 \times 2}$
 - $W_1^K \in \mathbb{R}^{16 \times 2}$
-- $W_1^V \in \mathbb{R}^{8 \times 1}$ Like here...
+- $W_1^V \in \mathbb{R}^{8 \times 1}$ please refer to ( 1C )
 
 ~~(Note: The dimensions of $W^Q$, $W^K$, and $W^V$ in the original text were given as $16 \times 16$, $16 \times 16$, and $8 \times 8$, respectively, but these seem inconsistent with the head-specific projections. We use the head-specific dimensions for calculations.)~~
 
