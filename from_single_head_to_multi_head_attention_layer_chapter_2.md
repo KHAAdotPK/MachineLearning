@@ -21,7 +21,7 @@ $$\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \dots, \text{head}_h)
 
 $$\text{where head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)$$
 
-Where the projections are parameter matrices W<sub>i</sub><sup>Q</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>K</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>V</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>v</sub></sup> and W<sup>O</sup> **&#8712;** $R$<sup>hd<sub>v</sub>**x**d<sub>model</sup>   
+Where the projections are parameter matrices W<sub>i</sub><sup>Q</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>K</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>V</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>v</sub></sup> (please refer to **( 1C )**) and W<sup>O</sup> **&#8712;** $R$<sup>hd<sub>v</sub>**x**d<sub>model</sup>   
 In this work we employ $h = 8$ parallel attention heads. For each of these we use $d_k = d_v = d_{\text{model}}/h = 64$. Due to the reduced dimension of each head, the total computational cost is similar to that of single-head attention with full dimensionality.
 
 **Standard Q, K, V dimensions:** In the standard multi-head attention mechanism (e.g., as defined in the Transformer model from "Attention is All You Need"), the input matrices ( Q ), ( K ), and ( V ) typically have the same second dimension, d<sub>model</sub> meaning:
@@ -41,7 +41,7 @@ This ensures that the rows of all projection matrices correspond to d<sub>model<
 
 This flexibility allows ( V ) to have a different embedding dimension d<sub>v</sub>**x**$h$
 
-#### Multi-Head Attention Mechanics
+### Multi-Head Attention Mechanics
 
 The multi-head attention mechanism is defined as follows:
 
@@ -58,7 +58,7 @@ $$
 The projections are parameter matrices with the following dimensions:
 - $W_i^Q \in \mathbb{R}^{d_{\text{model}} \times d_k}$
 - $W_i^K \in \mathbb{R}^{d_{\text{model}} \times d_k}$ 
-- $W_i^V \in \mathbb{R}^{d_{\text{model}} \times d_v}$ ( 1C ): This notation can be confusing. The first dimension, d<sub>model</sub> must match the feature dimension of the input $V$ matrix. This is inconsistent with the standard, where $V$ typically shares the same d<sub>model</sub> as inputs $Q$ and $K$. As shown in the example, $V$ **&#8712;** $R$<sup>3**x**8</sup> while $Q$, $K$ **&#8712;** $R$<sup>3**x**16</sup>. Therefore, $W$<sub>i</sub><sup>V</sup> should be **&#8712;** $R$<sup>8**x**d<sub>v</sub></sup>. In this specific case, the input dimension $8$ corresponds to $h$.d<sub>v</sub>, so a more precise notation for this example would be $W$<sub>i</sub><sup>V</sup> **&#8712;** $R$<sup>hd<sub>v</sub>**x**d<sub>v</sub></sup>.
+- $W_i^V \in \mathbb{R}^{d_{\text{model}} \times d_v}$ **( 1C )**: This notation can be confusing. The first dimension, d<sub>model</sub> must match the feature dimension of the input $V$ matrix. This is inconsistent with the standard, where $V$ typically shares the same d<sub>model</sub> as inputs $Q$ and $K$. As shown in the example, $V$ **&#8712;** $R$<sup>3**x**8</sup> while $Q$, $K$ **&#8712;** $R$<sup>3**x**16</sup>. Therefore, $W$<sub>i</sub><sup>V</sup> should be **&#8712;** $R$<sup>8**x**d<sub>v</sub></sup>. In this specific case, the input dimension $8$ corresponds to $h$.d<sub>v</sub>, so a more precise notation for this example would be $W$<sub>i</sub><sup>V</sup> **&#8712;** $R$<sup>hd<sub>v</sub>**x**d<sub>v</sub></sup>.
 - $W^O \in \mathbb{R}^{h d_v \times d_{\text{model}}}$
 
 ## Example Calculation
@@ -76,9 +76,9 @@ Suppose we have the following input dimensions:
 The projection matrices for the first head ($i=1$) are:
 - $W_1^Q \in \mathbb{R}^{16 \times 2}$
 - $W_1^K \in \mathbb{R}^{16 \times 2}$
-- $W_1^V \in \mathbb{R}^{8 \times 1}$ please refer to ( 1C )
+- $W_1^V \in \mathbb{R}^{8 \times 1}$ please refer to **( 1C )**
 
-~~(Note: The dimensions of $W^Q$, $W^K$, and $W^V$ in the original text were given as $16 \times 16$, $16 \times 16$, and $8 \times 8$, respectively, but these seem inconsistent with the head-specific projections. We use the head-specific dimensions for calculations.)~~
+~~(Note: The dimensions of $W^Q$, $W^K$, and $W^V$ in the original text were given as $16 \times 16$, $16 \times 16$, and $8 \times 8$, respectively, but these seem inconsistent with the head-specific projections. We use the head-specific dimensions for calculations.)~~. $For$ $discussion$, $please$ $refer$ $to$ **( 2C )**
 
 ### Head Computation
 For the first head ($i=1$):
@@ -132,11 +132,25 @@ $$
 \text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \dots, \text{head}_8)W^O = (3 \times 8) \cdot (8 \times 16) = 3 \times 16
 $$
 
-----
+( 2C ) **Alternative Interpretation of Weight Dimensions** 
+
+While the standard formulation uses separate projection matrices for each head, one can envision the weight matrices $W^Q$, $W^K$, and $W^V$ as consolidated repositories containing all head projections. In this view:
+
+- $W^Q \in \mathbb{R}^{16 \times 16}$ can be thought of as containing all 8 head projections ($W_i^Q \in \mathbb{R}^{16 \times 2}$) concatenated along the second dimension
+- Similarly, $W^K \in \mathbb{R}^{16 \times 16}$ consolidates all $W_i^K$ projections
+- $W^V \in \mathbb{R}^{8 \times 8}$ contains all $W_i^V$ projections
+
+During computation, the specific slices corresponding to each head's dimensions ($d_q=2$, $d_k=2$, $d_v=1$) are extracted from these master weight matrices. This perspective is particularly relevant when considering:
+
+1. **Hypothetical Single-Head Self-Attention**: For a single head with full dimensionality, these dimensions become directly applicable
+2. **Weight Organization**: The matrices serve as centralized repositories from which head-specific projections are drawn according to the required $d_q$, $d_k$, and $d_v$ dimensions
+3. **Implementation Flexibility**: This approach provides a unified storage mechanism that can be partitioned dynamically based on the head configuration
+
+Though this differs from the standard formulation where each head has explicitly separate learned projections, it offers an alternative conceptual framework for understanding the weight organization in multi-head attention systems.
+
+---
 
 ```C++
 ```
 ```C++
 ```
-
-
