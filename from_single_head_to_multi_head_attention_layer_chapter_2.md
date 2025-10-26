@@ -9,9 +9,9 @@
 
 #### Update on Chapter 2: Why It’s Not Available Yet
 
-Hey readers, Chapter 2 on multi-head attention isn’t ready just yet, and here’s why: I’m working through some tricky details on reshaping the encoder inputs for the multi-head attention layer. My input is a row vector of shape `(3, 16)` (3 tokens, 16 features), and splitting it into multiple heads (like 8 or 6) requires careful handling to ensure the feature dimension divides evenly. For example, with 8 heads, each head gets a clean `(3, 2)` slice, but 6 heads causes issues since `16 / 6` isn’t an integer. I’m refining the logic to reshape the input properly (possibly with padding for cases like 6 heads) to make the code robust and clear. This is part of my larger C++ Transformer project, and I want to get it right before sharing. Stay tuned for the update, and thanks for following along!
+Hey readers, Chapter 2 on multi-head attention isn’t ready just yet ~~, and here’s why: I’m working through some tricky details on reshaping the encoder inputs for the multi-head attention layer. My input is a row vector of shape `(3, 16)` (3 tokens, 16 features), and splitting it into multiple heads (like 8 or 6) requires careful handling to ensure the feature dimension divides evenly. For example, with 8 heads, each head gets a clean `(3, 2)` slice, but 6 heads causes issues since `16 / 6` isn’t an integer. I’m refining the logic to reshape the input properly (possibly with padding for cases like 6 heads) to make the code robust and clear. This is part of my larger C++ Transformer project, and I want to get it right before sharing. Stay tuned for the update, and thanks for following along!~~
 
-#### 3.2.2 
+#### 3.2.2 Multi-Head Attention
 
 Instead of performing a single attention function with d<sub>model</sub>-dimensional keys, values and queries, we found it beneficial to linearly project the queries, keys and values $h$ times with different, learned linear projections to d<sub>k</sub>, d<sub>k</sub> and d<sub>v</sub> dimensions, respectively. On each of these projected versions of queries, keys and values we then perform the attention function in parallel, yielding $d_v$-dimensional output values. These are concatenated and once again projected, resulting in the final values, as depicted in Figure 2. 
 
@@ -24,7 +24,98 @@ $$\text{where head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)$$
 Where the projections are parameter matrices W<sub>i</sub><sup>Q</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>K</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>V</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>v</sub></sup> and W<sup>O</sup> **&#8712;** $R$<sup>hd<sub>v</sub>**x**d<sub>model</sup>   
 In this work we employ $h = 8$ parallel attention heads. For each of these we use $d_k = d_v = d_{\text{model}}/h = 64$. Due to the reduced dimension of each head, the total computational cost is similar to that of single-head attention with full dimensionality.
 
+# Multi-Head Attention Mechanism
 
+The multi-head attention mechanism is defined as follows:
+
+$$
+\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \dots, \text{head}_h)W^O
+$$
+
+where each head is computed as:
+
+$$
+\text{head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
+$$
+
+The projections are parameter matrices with the following dimensions:
+- $W_i^Q \in \mathbb{R}^{d_{\text{model}} \times d_k}$
+- $W_i^K \in \mathbb{R}^{d_{\text{model}} \times d_k}$
+- $W_i^V \in \mathbb{R}^{d_{\text{model}} \times d_v}$ Though inconsistent from the standard nut here d<sub>modle</sub> can have different value
+- $W^O \in \mathbb{R}^{h d_v \times d_{\text{model}}}$
+
+## Example Calculation
+
+Suppose we have the following input dimensions:
+- Query matrix: $Q \in \mathbb{R}^{3 \times 16}$
+- Key matrix: $K \in \mathbb{R}^{3 \times 16}$
+- Value matrix: $V \in \mathbb{R}^{3 \times 8}$
+- Number of heads: $h = 8$
+- Dimensions per head:
+  - $d_q = d_k = 2$
+  - $d_v = 1$
+
+### Projection Matrices
+The projection matrices for the first head ($i=1$) are:
+- $W_1^Q \in \mathbb{R}^{16 \times 2}$
+- $W_1^K \in \mathbb{R}^{16 \times 2}$
+- $W_1^V \in \mathbb{R}^{8 \times 1}$ Like here...
+
+~~(Note: The dimensions of $W^Q$, $W^K$, and $W^V$ in the original text were given as $16 \times 16$, $16 \times 16$, and $8 \times 8$, respectively, but these seem inconsistent with the head-specific projections. We use the head-specific dimensions for calculations.)~~
+
+### Head Computation
+For the first head ($i=1$):
+- Compute $QW_1^Q$:
+  $$
+  QW_1^Q = (3 \times 16) \cdot (16 \times 2) = 3 \times 2
+  $$
+- Compute $KW_1^K$:
+  $$
+  KW_1^K = (3 \times 16) \cdot (16 \times 2) = 3 \times 2
+  $$
+- Compute $VW_1^V$:
+  $$
+  VW_1^V = (3 \times 8) \cdot (8 \times 1) = 3 \times 1
+  $$
+
+The attention mechanism for the first head is:
+
+$$
+\text{head}_1 = \text{Attention}(QW_1^Q, KW_1^K, VW_1^V) = \text{softmax}\left(\frac{(QW_1^Q)(KW_1^K)^T}{\sqrt{d_k}}\right)(VW_1^V)
+$$
+
+- Compute $(QW_1^Q)(KW_1^K)^T$:
+  $$
+  (3 \times 2) \cdot (2 \times 3) = 3 \times 3
+  $$
+- Apply softmax to the scaled result (divided by $\sqrt{d_k} = \sqrt{2}$), then multiply by $VW_1^V$:
+  $$
+  (3 \times 3) \cdot (3 \times 1) = 3 \times 1
+  $$
+
+Thus, $\text{head}_1 \in \mathbb{R}^{3 \times 1}$.
+
+### Concatenation Across Heads
+Since there are $h = 8$ heads, and each head outputs a matrix of shape $3 \times 1$, the concatenation of all heads is:
+
+$$
+\text{Concat}(\text{head}_1, \dots, \text{head}_8) \in \mathbb{R}^{3 \times 8}
+$$
+
+### Final Output
+The output projection matrix is:
+
+$$
+W^O \in \mathbb{R}^{h d_v \times d_{\text{model}}} = \mathbb{R}^{8 \cdot 1 \times 16} = \mathbb{R}^{8 \times 16}
+$$
+
+The final output of the multi-head attention is:
+
+$$
+\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \dots, \text{head}_8)W^O = (3 \times 8) \cdot (8 \times 16) = 3 \times 16
+$$
+
+----
 
 ```C++
 ```

@@ -97,7 +97,7 @@ So, when the paper says "queries and keys of dimension $d_k$", they are referrin
     2. The attention score calculation, one of the following two
 
         - **S** = **Q**.**K**<sup>T</sup>/&radic;d<sub>k</sub> 
-        - **S** = **Q**.**K**<sup>T </sup>
+        - **S** = **Q**.**K**<sup>T</sup>
         ```C++
         // Before using the last method to calulate scores from the two given, please know what you are doing.
         ```  
