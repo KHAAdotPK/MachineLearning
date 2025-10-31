@@ -95,11 +95,8 @@ $$
 \text{head}_1 = \text{Attention}(QW_1^Q, KW_1^K, VW_1^V) = \text{softmax}\left(\frac{(QW_1^Q)(KW_1^K)^T}{\sqrt{d_k}}\right)(VW_1^V)
 $$
 
-- Compute $(QW_1^Q)(KW_1^K)^T$:$$(3 \times 2) \cdot (2 \times 3) = 3 \times 3$$
-- Apply softmax to the scaled result (divided by $\sqrt{d_k} = \sqrt{2}$), then multiply by $VW_1^V$:
-  $$
-  (3 \times 3) \cdot (3 \times 1) = 3 \times 1
-  $$
+- Compute $(QW_1^Q)(KW_1^K)^T$: $$(3 \times 2) \cdot (2 \times 3) = 3 \times 3$$
+- Apply softmax to the scaled result (divided by $\sqrt{d_k} = \sqrt{2}$), then multiply by $VW_1^V$: $$(3 \times 3) \cdot (3 \times 1) = 3 \times 1$$
 
 Thus, $\text{head}_1 \in \mathbb{R}^{3 \times 1}$.
 
