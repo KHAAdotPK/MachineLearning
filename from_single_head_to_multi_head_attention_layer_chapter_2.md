@@ -21,7 +21,7 @@ $$\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \dots, \text{head}_h)
 
 $$\text{where head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)$$
 
-Where the projections are parameter matrices W<sub>i</sub><sup>Q</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>K</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>V</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>v</sub></sup> (please refer to **( 1C )**) and W<sup>O</sup> **&#8712;** $R$<sup>hd<sub>v</sub>**x**d<sub>model</sup>   
+Where the projections are parameter matrices W<sub>i</sub><sup>Q</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>K</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>k</sub></sup>, W<sub>i</sub><sup>V</sup> **&#8712;** $R$<sup>d<sub>model</sub>**x**d<sub>v</sub></sup> ($please$ $refer$ $to$ **( 1C )**) and W<sup>O</sup> **&#8712;** $R$<sup>hd<sub>v</sub>**x**d<sub>model</sup>   
 In this work we employ $h = 8$ parallel attention heads. For each of these we use $d_k = d_v = d_{\text{model}}/h = 64$. Due to the reduced dimension of each head, the total computational cost is similar to that of single-head attention with full dimensionality.
 
 **Standard Q, K, V dimensions:** In the standard multi-head attention mechanism (e.g., as defined in the Transformer model from "Attention is All You Need"), the input matrices ( Q ), ( K ), and ( V ) typically have the same second dimension, d<sub>model</sub> meaning:
@@ -83,17 +83,11 @@ The projection matrices for the first head ($i=1$) are:
 ### Head Computation
 For the first head ($i=1$):
 - Compute $QW_1^Q$:
-  $$
-  QW_1^Q = (3 \times 16) \cdot (16 \times 2) = 3 \times 2
-  $$
+  $$QW_1^Q = (3 \times 16) \cdot (16 \times 2) = 3 \times 2$$
 - Compute $KW_1^K$:
-  $$
-  KW_1^K = (3 \times 16) \cdot (16 \times 2) = 3 \times 2
-  $$
+  $$KW_1^K = (3 \times 16) \cdot (16 \times 2) = 3 \times 2$$
 - Compute $VW_1^V$:
-  $$
-  VW_1^V = (3 \times 8) \cdot (8 \times 1) = 3 \times 1
-  $$
+  $$VW_1^V = (3 \times 8) \cdot (8 \times 1) = 3 \times 1$$
 
 The attention mechanism for the first head is:
 
