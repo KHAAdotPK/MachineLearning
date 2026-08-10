@@ -1,9 +1,9 @@
-```markdown
+
 # NLP Preprocessing Pipeline
 
 **C++ libraries for high-performance corpus parsing, vocabulary construction, frequency-based truncation, and skip-gram context pair generation.**
 
-This workspace contains a modular set of header-oriented C++ libraries that together implement a complete offline preprocessing pipeline for word embedding / language model training (particularly skip-gram style objectives).
+A modular set of header-oriented C++ libraries that together implement a complete offline preprocessing pipeline for word embedding / language model training (particularly skip-gram style objectives).
 
 The pipeline turns a raw text corpus into:
 1. A compact in-memory vocabulary (hash table + dense word-ID index)
@@ -28,7 +28,6 @@ All heavy lifting is performed in a small number of linear passes over the data.
 ---
 
 ## High-Level Pipeline
-
 ```
 Raw corpus file
       │
@@ -57,7 +56,6 @@ Raw corpus file
 Training-ready data
 (vocabulary + context pairs)
 ```
-
 ---
 
 ## Core Data Structures
@@ -241,5 +239,5 @@ Each repository carries its own license file. Please consult the individual `LIC
 ## Acknowledgements
 
 The architecture and data-structure choices evolved through successive rewrites focused on eliminating string-heavy lookups and pointer chasing. The present design is the result of that iterative refinement.
-```
+
 
